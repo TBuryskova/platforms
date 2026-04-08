@@ -26,7 +26,7 @@ plot_df <- df %>%
     distraction_index,
     visual_index,
     fee_private,
-    fee_business, complexity
+    fee_business, complexity, complexity_index
   ) %>%
   pivot_longer(
     cols = c(distraction_index, visual_index),
@@ -128,7 +128,7 @@ theory_facet <- bind_rows(lapply(seq_len(nrow(facet_ranges)), function(i) {
 # -----------------------------
 # 6. Plot
 # -----------------------------
-p <- ggplot(plot_df, aes(x = index_value, y = fee_value, color=complexity)) +
+p <- ggplot(plot_df, aes(x = index_value, y = fee_value, color=complexity_index)) +
   geom_point(size = 2) +
   geom_line(
     data = theory_facet,
@@ -149,3 +149,17 @@ p <- ggplot(plot_df, aes(x = index_value, y = fee_value, color=complexity)) +
 print(p)
 
 
+q <- ggplot(df, aes(x = complexity_index, y = fee_private)) +
+  geom_point(size = 2) +
+  theme_minimal() 
+
+print(q)
+
+r <- ggplot(df, aes(x = complexity_index, y = distraction_index )) +
+  geom_point(size = 2) +
+  theme_minimal() 
+
+print(r)
+
+lm(fee_private~complexity_index, df) %>% summary()
+lm(interruption~complexity_index, df) %>% summary()

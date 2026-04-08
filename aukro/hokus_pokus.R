@@ -10,18 +10,10 @@ df <- read_excel("data aukro.xlsx")
 # -----------------------------
 df <- df %>%
   mutate(
-    distraction_index = rowMeans(scale(select(.,
-                                              `3rd-party ads`,
-                                              `Promo / internal banners`,
-                                              `Sticky distractions`,
-                                              `Interruptions in listing stream`,
-                                              `Distracting viewport area (%)`
+    distraction_index = rowMeans(scale(select(.,third_party,banners,sticky, interruption, viewport_area
     )), na.rm = TRUE),
     
-    visual_index = rowMeans(scale(select(.,
-                                         `Promo / internal banners`,
-                                         `Sticky distractions`,
-                                         `Distracting viewport area (%)`
+    visual_index = rowMeans(scale(select(.,banners,sticky,viewport_area
     )), na.rm = TRUE)
   )
 
@@ -33,8 +25,8 @@ plot_df <- df %>%
     category,
     distraction_index,
     visual_index,
-    `Fee % (Soukromý)`,
-    `Fee % (Podnikatel)`
+    fee_private,
+    fee_business, complexity
   ) %>%
   pivot_longer(
     cols = c(distraction_index, visual_index),
@@ -42,7 +34,8 @@ plot_df <- df %>%
     values_to = "index_value"
   ) %>%
   pivot_longer(
-    cols = c(`Fee % (Soukromý)`, `Fee % (Podnikatel)`),
+    cols = c( fee_private,
+              fee_business),
     names_to = "fee_type",
     values_to = "fee_value"
   ) %>%
@@ -54,8 +47,8 @@ plot_df <- df %>%
     ),
     fee_type = recode(
       fee_type,
-      `Fee % (Soukromý)` = "Fee % Private",
-      `Fee % (Podnikatel)` = "Fee % Business"
+      fee_private = "fee_private",
+      fee_business = "fee_business"
     )
   )
 
@@ -135,7 +128,7 @@ theory_facet <- bind_rows(lapply(seq_len(nrow(facet_ranges)), function(i) {
 # -----------------------------
 # 6. Plot
 # -----------------------------
-p <- ggplot(plot_df, aes(x = index_value, y = fee_value)) +
+p <- ggplot(plot_df, aes(x = index_value, y = fee_value, color=complexity)) +
   geom_point(size = 2) +
   geom_line(
     data = theory_facet,

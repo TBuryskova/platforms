@@ -101,15 +101,14 @@ a_fun <- function(x, y, def) {
     if(y==0) {
       return(0.5*x)
     } else {
-      return(pB(x, y) * x + I_RI(x, y) * y )
+      return(pB(x, y) * x )
     }
   }  else if (def == "def4") {
     return(V_RI(x,y))
   } else if (def == "def5") {
-    return(V_RI(x,y)+pB(x, y) * x + I_RI(x, y) * y)
+    return(V_RI(x,y)+pB(x, y) * x + I_RI(x, y))
   }
 }
-
 # --- UI ---
 ui <- fluidPage(
   titlePanel("Different definitions of a(x,y)"),

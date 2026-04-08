@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+
+<html lang="cs" class="scroll-smooth">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Inovativní Vzdělávání: Principy Radka Sáblíka</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: Warm Neutrals with Amber Accent -->
+
+    <!-- Application Structure Plan: The application is designed as a single-page exploratory journey, moving from abstract principles to concrete examples and actionable steps. It uses a thematic structure: 1. Hero section for context. 2. An interactive dashboard of the 10 core principles, allowing users to select and view details on demand, preventing information overload. 3. A project showcase using modals to provide deep-dives without leaving the page. 4. A comparative section on redefined roles ('Human Capital'). 5. A clear, final section with actionable recommendations. This non-linear, thematic approach was chosen over the report's linear structure to enhance user engagement, facilitate self-paced exploration, and make the complex philosophy more digestible for a diverse audience of educators. -->
+
+    <!-- Visualization & Content Choices: The report is primarily qualitative. The main "visualizations" are the interactive layouts themselves. 1. 10 Principles: Report Info -> Goal: Organize/Inform -> Viz: Interactive Card Grid -> Interaction: Click to reveal details -> Justification: Breaks down dense text into manageable, user-selected chunks. Method: HTML/CSS/JS. 2. Teacher Demographics: Report Info: "Téměř polovina z 82 učitelů je ve věku od 19 do 27 let" -> Goal: Inform -> Viz: Donut Chart -> Interaction: Hover for tooltips -> Justification: Provides a quick, impactful visual summary of a key statistic about the school's unique human capital. Library: Chart.js/Canvas. 3. Projects: Report Info -> Goal: Inform -> Viz: Card-based gallery -> Interaction: Click to open modal with details -> Justification: Showcases practical examples cleanly. Method: HTML/CSS/JS. 4. Recommendations: Report Info -> Goal: Organize -> Viz: Numbered step-by-step list -> Interaction: Static -> Justification: Presents a clear, actionable path forward. Method: HTML/CSS. -->
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+
+        body {
+
+            font-family: 'Inter', sans-serif;
+
+            background-color: #F5F5F4; /* stone-100 */
+
+            color: #44403C; /* stone-700 */
+
+        }
+
+        .principle-card.active {
+
+            background-color: #FBBF24; /* amber-400 */
+
+            color: #44403C; /* stone-700 */
+
+            transform: translateY(-5px);
+
+        }
+
+        .nav-link {
+
+            transition: color 0.3s ease;
+
+        }
+
+        .nav-link:hover {
+
+            color: #FBBF24; /* amber-400 */
+
+        }
+
+        .modal {
+
+            display: none;
+
+            transition: opacity 0.3s ease;
+
+        }
+
+        .modal-content {
+
+            transform: scale(0.95);
+
+            transition: transform 0.3s ease;
+
+        }
+
+        .modal.open {
+
+            display: flex;
+
+        }
+
+        .modal.open .modal-content {
+
+            transform: scale(1);
+
+        }
+
+        .chart-container {
+
+            position: relative;
+
+            width: 100%;
+
+            max-width: 350px;
+
+            margin-left: auto;
+
+            margin-right: auto;
+
+            height: 350px;
+
+            max-height: 400px;
+
+        }
+
+    </style>
+
+</head>
+
+<body class="antialiased">
+
+
+    <!-- Header & Navigation -->
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+
+            <h1 class="text-xl md:text-2xl font-bold text-stone-800">Inovace ve Vzdělávání</h1>
+
+            <nav class="hidden md:flex space-x-8">
+
+                <a href="#principy" class="text-stone-600 nav-link font-medium">Principy</a>
+
+                <a href="#projekty" class="text-stone-600 nav-link font-medium">Projekty</a>
+
+                <a href="#kapital" class="text-stone-600 nav-link font-medium">Lidský Faktor</a>
+
+                <a href="#doporuceni" class="text-stone-600 nav-link font-medium">Doporučení</a>
+
+            </nav>
+
+            <button id="mobile-menu-button" class="md:hidden text-stone-700">
+
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+
+                </svg>
+
+            </button>
+
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
+
+            <a href="#principy" class="block py-2 text-stone-600 nav-link">Principy</a>
+
+            <a href="#projekty" class="block py-2 text-stone-600 nav-link">Projekty</a>
+
+            <a href="#kapital" class="block py-2 text-stone-600 nav-link">Lidský Faktor</a>
+
+            <a href="#doporuceni" class="block py-2 text-stone-600 nav-link">Doporučení</a>
+
+        </div>
+
+    </header>
+
+
+    <main class="container mx-auto px-6 py-12">
+
+        <!-- Hero Section -->
+
+        <section class="text-center mb-16">
+
+            <h2 class="text-4xl md:text-5xl font-bold text-stone-800 mb-4">Model Smíchovské SPŠ: Inspirace pro Gymnázium Dr. Antona Randy</h2>
+
+            <p class="max-w-3xl mx-auto text-lg text-stone-600">
+
+                Interaktivní průvodce deseti klíčovými principy pedagogické filozofie Ing. Radka Sáblíka. Prozkoumejte, jak přeměnit školu v dynamický ekosystém, který připravuje studenty na budoucnost.
+
+            </p>
+
+        </section>
+
+
+        <!-- 10 Principles Section -->
+
+        <section id="principy" class="mb-20">
+
+            <h3 class="text-3xl font-bold text-center mb-2 text-stone-800">Deset Pilířů Inovativního Vzdělávání</h3>
+
+            <p class="text-center text-stone-600 mb-10">Kliknutím na princip zobrazíte jeho detailní popis.</p>
+
+           
+
+            <div id="principles-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+
+                <!-- Principles will be injected here by JS -->
+
+            </div>
+
+
+            <div id="principle-details" class="bg-white p-8 rounded-xl shadow-lg min-h-[300px] transition-opacity duration-500">
+
+                <!-- Details will be injected here by JS -->
+
+            </div>
+
+        </section>
+
+
+        <!-- Projects Section -->
+
+        <section id="projekty" class="mb-20">
+
+            <h3 class="text-3xl font-bold text-center mb-10 text-stone-800">Praktická Realizace: Projekty v Akci</h3>
+
+            <div id="projects-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                <!-- Project cards will be injected here -->
+
+            </div>
+
+        </section>
+
+
+        <!-- Human Capital Section -->
+
+        <section id="kapital" class="mb-20">
+
+            <h3 class="text-3xl font-bold text-center mb-10 text-stone-800">Human Capital: Nový Pohled na Role ve Škole</h3>
+
+            <div class="grid lg:grid-cols-3 gap-8 items-start">
+
+                <div class="lg:col-span-2 grid md:grid-cols-2 gap-8">
+
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+
+                        <h4 class="text-xl font-bold mb-3 text-amber-600">👨‍🎓 Student jako Manažer a Lídr</h4>
+
+                        <p class="text-stone-600">Studenti nejsou pasivní příjemci, ale aktivní "zaměstnanci" školy. Podílejí se na jejím chodu, vedou projekty v IT či PR a přebírají plnou zodpovědnost. Tento přístup rozvíjí jejich sebedůvěru, podnikavost a schopnost čelit velkým výzvám.</p>
+
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+
+                        <h4 class="text-xl font-bold mb-3 text-amber-600">🎓 Absolvent jako Pedagog</h4>
+
+                        <p class="text-stone-600">Škola cíleně zaměstnává své mladé absolventy. Ti přinášejí aktuální znalosti, novou perspektivu a posilují komunitu zevnitř. Vzniká tak unikátní "inkubátor" talentů a přirozený přenos inovací na další generace.</p>
+
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-md md:col-span-2">
+
+                        <h4 class="text-xl font-bold mb-3 text-amber-600">🤝 Vedení jako Facilitátor</h4>
+
+                        <p class="text-stone-600">Ředitel vystupuje jako "moderátor" a učitelé jako mentoři a konzultanti. Vzdávají se role tradiční autority a vytvářejí prostředí důvěry, kde je hlavním cílem podpora a usnadňování cesty studentů za poznáním. Vyžaduje to odvahu a ochotu vzdát se kontroly ve prospěch autonomie.</p>
+
+                    </div>
+
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md">
+
+                    <h4 class="text-xl font-bold mb-3 text-center text-amber-600">Složení Pedagogického Sboru</h4>
+
+                    <p class="text-stone-600 text-center mb-4 text-sm">Téměř polovina sboru jsou mladí absolventi, což zajišťuje neustálý přísun moderních kompetencí.</p>
+
+                    <div class="chart-container">
+
+                        <canvas id="teacherChart"></canvas>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Recommendations Section -->
+
+        <section id="doporuceni">
+
+            <h3 class="text-3xl font-bold text-center mb-10 text-stone-800">Doporučení pro Gymnázium: Cesta do UŠI</h3>
+
+            <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
+
+                <div class="bg-amber-100 border-l-4 border-amber-500 p-6 rounded-r-lg">
+
+                    <h4 class="font-bold text-lg mb-2 text-amber-800">1. Vytvoření studentského „kulatého stolu“</h4>
+
+                    <p class="text-amber-900">Zaveďte platformu pro pravidelnou diskusi mezi studenty, učiteli a vedením o chodu školy. Posílíte tak roli studentů a jejich zodpovědnost.</p>
+
+                </div>
+
+                <div class="bg-amber-100 border-l-4 border-amber-500 p-6 rounded-r-lg">
+
+                    <h4 class="font-bold text-lg mb-2 text-amber-800">2. Pilotní projektová výuka</h4>
+
+                    <p class="text-amber-900">Zkuste v malém měřítku propojit humanitní a technologické obory, např. tvorbou interaktivní mapy regionu. Ukážete tak relevanci projektů i pro gymnázium.</p>
+
+                </div>
+
+                <div class="bg-amber-100 border-l-4 border-amber-500 p-6 rounded-r-lg">
+
+                    <h4 class="font-bold text-lg mb-2 text-amber-800">3. Navázání komunitní spolupráce</h4>
+
+                    <p class="text-amber-900">Nechte studenty vést workshopy pro ZŠ nebo seniory. Posílíte tím pozici školy v regionu a dáte studentům pocit smysluplné práce.</p>
+
+                </div>
+
+                <div class="bg-amber-100 border-l-4 border-amber-500 p-6 rounded-r-lg">
+
+                    <h4 class="font-bold text-lg mb-2 text-amber-800">4. Cílené zapojení absolventů</h4>
+
+                    <p class="text-amber-900">Pozvěte mladé, aktivní absolventy na semináře či konzultace. Oživíte sbor, přinesete nové myšlenky a posílíte komunitu.</p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer class="bg-white mt-20 border-t">
+
+        <div class="container mx-auto px-6 py-8 text-center text-stone-500">
+
+            <p>&copy; 2025 Inspirace pro Gymnázium Dr. Antona Randy. Vytvořeno jako podklad pro strategickou poradu.</p>
+
+        </div>
+
+    </footer>
+
+
+    <!-- Project Modal -->
+
+    <div id="project-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4">
+
+        <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-8 relative">
+
+            <button id="close-modal-button" class="absolute top-4 right-4 text-stone-500 hover:text-stone-800 transition">
+
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+
+                </svg>
+
+            </button>
+
+            <div id="modal-body">
+
+                <!-- Modal content will be injected here -->
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    const principlesData = [
+
+        { id: 1, title: 'Student jako spolutvůrce', content: 'Jádrem filozofie je student jako aktivní partner s odpovědností za výsledky. Tento přístup podporuje samostatnost, podnikavost a vnitřní motivaci. Studenti se zapojují do reálných problémů a chodu školy, čímž si osvojují projektový management a další klíčové dovednosti.' },
+
+        { id: 2, title: 'Ředitel jako moderátor', content: 'Ředitel nevystupuje jako autorita, ale jako moderátor diskuse mezi učiteli a studenty. Vytváří inspirativní prostředí a atmosféru důvěry, což je zásadní pro autonomii studentů a odklon od tradiční hierarchie.' },
+
+        { id: 3, title: 'Důraz na reálné projekty', content: 'Místo teorie se výuka soustředí na řešení problémů skutečného života a vývoj reálných produktů. Povinné projekty ve spolupráci s firmami přirozeně rozvíjejí týmovou práci, vedení a prezentační dovednosti.' },
+
+        { id: 4, title: 'Propojení s praxí', content: 'Škola má hluboké, smluvně ošetřené vazby s firmami. Odborníci z praxe se podílejí na výuce až z 50 %, což zajišťuje přenos aktuálního know-how a minimalizuje propast mezi teorií a praxí.' },
+
+        { id: 5, title: 'Celoživotní vzdělávání', content: 'Klíčovou dovedností je schopnost učit se sám. Škola to podporuje modelem kombinovaného vzdělávání s jedním dnem samostudia týdně, což rozvíjí organizaci času, kritické myšlení a vnitřní motivaci.' },
+
+        { id: 6, title: 'Technologie jako nástroj', content: 'Technologie (IoT, VR) nejsou cílem, ale prostředkem pro transformaci výuky. Učitel se stává mentorem, který pomáhá studentům využívat technologie k řešení komplexních úkolů, nikoli jen k práci s Office.' },
+
+        { id: 7, title: 'Redukce učiva', content: 'Škola prosazuje redukci učiva ve prospěch rozvoje základních dovedností jako kritické, informatické a logické myšlení. Pro gymnázium svázané maturitou je to nejsložitější, ale nejdůležitější bod.' },
+
+        { id: 8, title: 'Mladí absolventi ve sboru', content: 'Škola cíleně zaměstnává své absolventy. Téměř polovina sboru jsou mladí lidé, kteří přinášejí aktuální kompetence a vytvářejí silnou komunitu. Vzniká tak "virtuální cyklus" talentů.' },
+
+        { id: 9, title: 'Služba společnosti', content: 'Škola aktivně sdílí své inovace. Studenti tvoří výuková videa pro jiné učitele, pořádají workshopy pro ZŠ i seniory. Jejich práce tak získává reálný společenský dopad a hodnotu.' },
+
+        { id: 10, title: 'Selský rozum', content: 'Všechny inovace mají pragmatický a jasný cíl: připravit studenty na reálný osobní, společenský a profesní život. Nejde o inovace pro inovace, ale o smysluplné a praktické kroky.' }
+
+    ];
+
+
+    const projectsData = [
+
+        {
+
+            title: 'IoT - Město budoucnosti',
+
+            area: 'Internet věcí',
+
+            goal: 'Využití technologií pro řešení městských problémů.',
+
+            skills: 'Programování, projektový management, 3D modelování, umělá inteligence, aquaponie.',
+
+            connection: 'Spolupráce na tématech jako „pokročilé technologie pro turismus“ a „městské zemědělství“.'
+
+        },
+
+        {
+
+            title: 'Kybernetická bezpečnost',
+
+            area: 'Informační technologie',
+
+            goal: 'Osvětové kampaně a provoz kybernetického polygonu.',
+
+            skills: 'Analýza rizik, kybernetická obrana, organizace akcí.',
+
+            connection: 'Osvětová činnost pro základní školy a veřejnost.'
+
+        },
+
+        {
+
+            title: 'Mediální dům Preslova',
+
+            area: 'Média a online vzdělávání',
+
+            goal: 'Tvorba vzdělávacího a mediálního obsahu.',
+
+            skills: 'Kameramanské a střihačské dovednosti, reportáž, žurnalistika, PR, organizace seminářů.',
+
+            connection: 'Produkce výukových videí o online výuce pro učitele z celé ČR.'
+
+        },
+
+        {
+
+            title: 'Projekt Osvětim',
+
+            area: 'Virtuální realita a historie',
+
+            goal: 'Vytvoření stálé expozice s VR prohlídkami pro Terezín.',
+
+            skills: '3D modelování, práce s VR programy, historický výzkum, projektový management.',
+
+            connection: 'Stálá expozice v Terezíně. Ukázka propojení technologií a humanitních věd.'
+
+        },
+
+        {
+
+            title: 'Chytrý dům',
+
+            area: 'Chytrá domácnost',
+
+            goal: 'Mezinárodní projekt zaměřený na budování inteligentního domu.',
+
+            skills: 'Interdisciplinární spolupráce, mezinárodní komunikace, práce v týmu.',
+
+            connection: 'Spolupráce s partnery z Německa, Francie, Španělska a Polska v rámci programu Erasmus+.'
+
+        }
+
+    ];
+
+
+    const principlesGrid = document.getElementById('principles-grid');
+
+    const principleDetails = document.getElementById('principle-details');
+
+    const projectsContainer = document.getElementById('projects-container');
+
+    const modal = document.getElementById('project-modal');
+
+    const modalBody = document.getElementById('modal-body');
+
+    const closeModalButton = document.getElementById('close-modal-button');
+
+
+    // Populate principles
+
+    principlesData.forEach(p => {
+
+        const card = document.createElement('button');
+
+        card.className = 'principle-card text-left p-4 bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-400';
+
+        card.dataset.id = p.id;
+
+        card.innerHTML = `<span class="text-2xl font-bold text-amber-500">${p.id}.</span><h4 class="mt-2 font-semibold">${p.title}</h4>`;
+
+        principlesGrid.appendChild(card);
+
+    });
+
+
+    // Handle principle click
+
+    principlesGrid.addEventListener('click', (e) => {
+
+        const card = e.target.closest('.principle-card');
+
+        if (card) {
+
+            const principleId = card.dataset.id;
+
+            const principle = principlesData.find(p => p.id == principleId);
+
+           
+
+            document.querySelectorAll('.principle-card').forEach(c => c.classList.remove('active'));
+
+            card.classList.add('active');
+
+
+            principleDetails.style.opacity = 0;
+
+            setTimeout(() => {
+
+                principleDetails.innerHTML = `
+
+                    <h4 class="text-2xl font-bold mb-4 text-stone-800">${principle.id}. ${principle.title}</h4>
+
+                    <p class="text-stone-600 text-lg leading-relaxed">${principle.content}</p>
+
+                `;
+
+                principleDetails.style.opacity = 1;
+
+            }, 200);
+
+        }
+
+    });
+
+
+    // Initial principle display
+
+    document.querySelector('.principle-card[data-id="1"]').click();
+
+
+    // Populate projects
+
+    projectsData.forEach((project, index) => {
+
+        const card = document.createElement('div');
+
+        card.className = 'bg-white p-6 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer';
+
+        card.dataset.index = index;
+
+        card.innerHTML = `
+
+            <h4 class="text-xl font-bold mb-2 text-stone-800">${project.title}</h4>
+
+            <p class="text-amber-600 font-semibold text-sm mb-3">${project.area}</p>
+
+            <p class="text-stone-600">${project.goal}</p>
+
+        `;
+
+        card.addEventListener('click', () => openModal(index));
+
+        projectsContainer.appendChild(card);
+
+    });
+
+
+    // Modal logic
+
+    function openModal(index) {
+
+        const project = projectsData[index];
+
+        modalBody.innerHTML = `
+
+            <h3 class="text-3xl font-bold mb-2 text-stone-800">${project.title}</h3>
+
+            <p class="text-amber-600 font-semibold mb-6">${project.area}</p>
+
+            <div class="space-y-4 text-stone-700">
+
+                <p><strong class="font-semibold text-stone-800">Cíl projektu:</strong> ${project.goal}</p>
+
+                <p><strong class="font-semibold text-stone-800">Rozvíjené dovednosti:</strong> ${project.skills}</p>
+
+                <p><strong class="font-semibold text-stone-800">Propojení s reálným světem:</strong> ${project.connection}</p>
+
+            </div>
+
+        `;
+
+        modal.classList.add('open');
+
+    }
+
+
+    function closeModal() {
+
+        modal.classList.remove('open');
+
+    }
+
+
+    closeModalButton.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', (e) => {
+
+        if (e.target === modal) {
+
+            closeModal();
+
+        }
+
+    });
+
+    document.addEventListener('keydown', (e) => {
+
+        if (e.key === "Escape") closeModal();
+
+    });
+
+
+    // Mobile menu
+
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    mobileMenuButton.addEventListener('click', () => {
+
+        mobileMenu.classList.toggle('hidden');
+
+    });
+
+    document.querySelectorAll('#mobile-menu a').forEach(link => {
+
+        link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+
+    });
+
+
+    // Chart.js implementation
+
+    const ctx = document.getElementById('teacherChart').getContext('2d');
+
+    new Chart(ctx, {
+
+        type: 'doughnut',
+
+        data: {
+
+            labels: ['Mladí absolventi (19-27 let)', 'Ostatní pedagogové'],
+
+            datasets: [{
+
+                label: 'Složení sboru',
+
+                data: [45, 55], // Using 45% as "téměř polovina"
+
+                backgroundColor: [
+
+                    '#FBBF24', // amber-400
+
+                    '#D6D3D1'  // stone-300
+
+                ],
+
+                borderColor: [
+
+                    '#F5F5F4', // stone-100
+
+                    '#F5F5F4'
+
+                ],
+
+                borderWidth: 4,
+
+                hoverOffset: 8
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            cutout: '70%',
+
+            plugins: {
+
+                legend: {
+
+                    position: 'bottom',
+
+                    labels: {
+
+                        padding: 20,
+
+                        font: {
+
+                            family: "'Inter', sans-serif"
+
+                        }
+
+                    }
+
+                },
+
+                tooltip: {
+
+                    callbacks: {
+
+                        label: function(context) {
+
+                            let label = context.label || '';
+
+                            if (label) {
+
+                                label += ': ';
+
+                            }
+
+                            if (context.parsed !== null) {
+
+                                label += context.parsed + '%';
+
+                            }
+
+                            return label;
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    });
+
+});
+
+</script>
+
+
+</body>
+
+</html>

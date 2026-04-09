@@ -14,8 +14,9 @@ df <- df %>%
     )), na.rm = TRUE),
     
     visual_index = rowMeans(scale(select(.,banners,sticky,viewport_area
-    )), na.rm = TRUE)
-  )
+    )), na.rm = TRUE),
+    viewport_area=viewport_area/20
+  ) %>% mutate(complexity_index_sq=complexity_index^2)
 
 # -----------------------------
 # 2. Reshape data for facetting
@@ -128,38 +129,43 @@ theory_facet <- bind_rows(lapply(seq_len(nrow(facet_ranges)), function(i) {
 # -----------------------------
 # 6. Plot
 # -----------------------------
-p <- ggplot(plot_df, aes(x = index_value, y = fee_value, color=complexity_index)) +
+p <- ggplot(df, aes(x = fee_business, y = viewport_area, color=complexity)) +
   geom_point(size = 2) +
-  geom_line(
-    data = theory_facet,
-    aes(x = x, y = y, group = interaction(index_type, fee_type)),
-    color = "red",
-    linetype = "solid",
-    linewidth = 1.1,
-    inherit.aes = FALSE
-  ) +
-  facet_grid(index_type ~ fee_type, scales = "free") +
+ 
   labs(
-    x = "Index value",
+    x = "Ads",
     y = "Fee",
-    title = "Empirical relationships with rescaled theoretical curve"
+    title = ""
   ) +
   theme_minimal()
 
 print(p)
 
-
-q <- ggplot(df, aes(x = complexity_index, y = fee_private)) +
+q <- ggplot(df, aes(x = viewport_area, y = fee_private)) +
   geom_point(size = 2) +
   theme_minimal() 
 
 print(q)
 
-r <- ggplot(df, aes(x = complexity_index, y = distraction_index )) +
+r <- ggplot(df, aes(x = complexity_index, y = fee_private, label=category)) +
   geom_point(size = 2) +
-  theme_minimal() 
+  theme_minimal() + geom_text()
 
 print(r)
 
+w <- ggplot(df, aes(x = (complexity_index), y = viewport_area, label=category)) +
+  geom_point(size = 2) +
+  theme_minimal() + geom_text(hjust = 0, nudge_x = 0.05)
+
+print(w)
+
+
 lm(fee_private~complexity_index, df) %>% summary()
-lm(interruption~complexity_index, df) %>% summary()
+model <- lm(viewport_area ~ complexity_index + I(complexity_index^2), data = df)
+summary(model)
+
+b1 <- coef(model)["complexity_index"]
+b2 <- coef(model)["I(complexity_index^2)"]
+
+turning_point <- -b1 / (2 * b2)
+turning_point

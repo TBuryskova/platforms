@@ -1,0 +1,360 @@
+
+(() => {
+  const norm = (s) => (s || "").replace(/\s+/g, " ").trim();
+  const lower = (s) => norm(s).toLowerCase();
+  const textOf = (el) => norm(el?.innerText || el?.textContent || "");
+  const rectOf = (el) => el.getBoundingClientRect();
+
+  const isVisible = (el) => {
+    if (!el) return false;
+    const s = getComputedStyle(el);
+    if (s.display === "none" || s.visibility === "hidden" || Number(s.opacity) === 0) return false;
+    const r = rectOf(el);
+    return r.width > 0 && r.height > 0;
+  };
+
+  const csvEscape = (value) => {
+    const s = String(value ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const downloadTextFile = (filename, content, mime = "text/csv;charset=utf-8") => {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const parsePrice = (s) => {
+    if (!s) return null;
+    const cleaned = s
+      .replace(/[^\d.,]/g, "")
+      .replace(/,(?=\d{3}\b)/g, "")
+      .replace(/,/g, ".");
+    const m = cleaned.match(/\d+(\.\d+)?/);
+    return m ? Number(m[0]) : null;
+  };
+
+  // ----------------------------
+  // Item metadata
+  // ----------------------------
+  const itemTitle =
+    textOf(document.querySelector("#itemTitle")) ||
+    textOf(document.querySelector("[data-testid='x-item-title']")) ||
+    norm(document.title);
+
+  const itemId =
+    location.href.match(/\/itm\/(\d+)/)?.[1] ||
+    location.href.match(/[?&]item=(\d+)/)?.[1] ||
+    "";
+
+  const priceText =
+    textOf(document.querySelector("[data-testid='x-price-primary']")) ||
+    textOf(document.querySelector(".x-price-primary")) ||
+    textOf(document.querySelector("#prcIsum")) ||
+    textOf(document.querySelector(".display-price")) ||
+    "";
+
+  const price = parsePrice(priceText);
+
+  const breadcrumbText = Array.from(
+    document.querySelectorAll('nav a, nav span, [aria-label*="breadcrumb" i] a, [aria-label*="breadcrumb" i] span, .seo-breadcrumb-text, .bc-w')
+  )
+    .map(textOf)
+    .filter(Boolean)
+    .join(" > ");
+
+  const categoryBlob = lower(`${breadcrumbText} || ${itemTitle}`);
+
+  // ----------------------------
+  // Fee category detection
+  // ----------------------------
+  const detectFeeCategory = ({ text, price }) => {
+    const has = (re) => re.test(text);
+
+    // order matters: most specific first
+    if (has(/\bnft\b|art nft|movie nft|music nft|trading card nft|ccg nft|emerging nft/)) {
+      return {
+        fee_category: "NFTs",
+        fee_bucket: "5%",
+        fee_rule: "5% on total amount of sale",
+        fee_percent_estimate: 5.0
+      };
+    }
+
+    if (has(/heavy equipment|commercial printing presses|food truck|trailers? & carts?|restaurant & food service/)) {
+      return {
+        fee_category: "Select Business & Industrial",
+        fee_bucket: "3% / 0.5%",
+        fee_rule: price != null && price > 15000
+          ? "3% up to $15,000, then 0.5% over $15,000"
+          : "3% up to $15,000, then 0.5% over $15,000",
+        fee_percent_estimate: price != null && price > 15000 ? 0.5 : 3.0
+      };
+    }
+
+    if (has(/guitars? & basses?|fender|gibson|stratocaster|les paul|precision bass|jazz bass/)) {
+      return {
+        fee_category: "Guitars & Basses",
+        fee_bucket: "6.7% / 2.35%",
+        fee_rule: "6.7% up to $7,500, then 2.35% over $7,500",
+        fee_percent_estimate: price != null && price > 7500 ? 2.35 : 6.7
+      };
+    }
+
+    if (has(/watches?, parts? & accessories|rolex|omega|seiko|casio|submariner|speedmaster|watch band|watch parts/)) {
+      let est = 15.0;
+      if (price != null && price > 7500) est = 3.0;
+      else if (price != null && price > 1000) est = 6.5;
+      return {
+        fee_category: "Watches, Parts & Accessories",
+        fee_bucket: "15% / 6.5% / 3%",
+        fee_rule: "15% up to $1,000; 6.5% from $1,000 to $7,500; 3% over $7,500",
+        fee_percent_estimate: est
+      };
+    }
+
+    if (has(/jewelry|ring|necklace|bracelet|earrings?|diamond|gold|silver/) && !has(/watch/)) {
+      return {
+        fee_category: "Jewelry & Watches (except Watches, Parts & Accessories)",
+        fee_bucket: "15% / 9%",
+        fee_rule: "15% up to $5,000; 9% over $5,000",
+        fee_percent_estimate: price != null && price > 5000 ? 9.0 : 15.0
+      };
+    }
+
+    if (has(/women.?s bags?|handbags?|purse|tote bag|shoulder bag|crossbody|michael kors|coach|kate spade|louis vuitton/)) {
+      return {
+        fee_category: "Women's Bags & Handbags",
+        fee_bucket: "15% / 9%",
+        fee_rule: "15% up to $2,000; 9% over $2,000",
+        fee_percent_estimate: price != null && price > 2000 ? 9.0 : 15.0
+      };
+    }
+
+    if (has(/athletic shoes|sneakers?|running shoes|nike|adidas|jordan|air force 1|ultraboost/)) {
+      const over150 = price != null && price >= 150;
+      return {
+        fee_category: "Athletic Shoes",
+        fee_bucket: over150 ? "8%" : "13.6%",
+        fee_rule: over150
+          ? "8% if total sale is $150 or more; no per-order fee"
+          : "13.6% if total sale is under $150",
+        fee_percent_estimate: over150 ? 8.0 : 13.6
+      };
+    }
+
+    if (has(/bullion|gold bar|silver bar|silver eagle|krugerrand|maple leaf|ounce gold|ounce silver/)) {
+      return {
+        fee_category: "Bullion",
+        fee_bucket: "13.6% / 7%",
+        fee_rule: "13.6% if sale is $7,500 or less; 7% if sale is over $7,500",
+        fee_percent_estimate: price != null && price > 7500 ? 7.0 : 13.6
+      };
+    }
+
+    if (has(/coins? & paper money|coin|paper money|banknote|wheat penny|morgan dollar|numis/)) {
+      return {
+        fee_category: "Coins & Paper Money (except Bullion)",
+        fee_bucket: "13.25% / 2.35%",
+        fee_rule: "13.25% up to $7,500; 2.35% over $7,500",
+        fee_percent_estimate: price != null && price > 7500 ? 2.35 : 13.25
+      };
+    }
+
+    if (has(/sports trading cards?|trading cards?|pokemon|charizard|yu-gi-oh|magic the gathering|comic books? & memorabilia|non-sport trading cards?/)) {
+      return {
+        fee_category: "Select Collectibles / Trading Cards",
+        fee_bucket: "13.25% / 2.35%",
+        fee_rule: "13.25% up to $7,500; 2.35% over $7,500",
+        fee_percent_estimate: price != null && price > 7500 ? 2.35 : 13.25
+      };
+    }
+
+    if (has(/books? & magazines?|book|paperback|hardcover|isbn|thinking, fast and slow|thinking fast and slow/)) {
+      return {
+        fee_category: "Books & Magazines",
+        fee_bucket: "15.3% / 2.35%",
+        fee_rule: "15.3% up to $7,500; 2.35% over $7,500",
+        fee_percent_estimate: price != null && price > 7500 ? 2.35 : 15.3
+      };
+    }
+
+    if (has(/movies? & tv|blu-ray|dvd|4k ultra hd|television series|criterion/)) {
+      return {
+        fee_category: "Movies & TV",
+        fee_bucket: "15.3% / 2.35%",
+        fee_rule: "15.3% up to $7,500; 2.35% over $7,500",
+        fee_percent_estimate: price != null && price > 7500 ? 2.35 : 15.3
+      };
+    }
+
+    if (has(/\bmusic\b|cd\b|cassette|album\b|recording/) && !has(/vinyl|records?/)) {
+      return {
+        fee_category: "Music (except Vinyl Records)",
+        fee_bucket: "15.3% / 2.35%",
+        fee_rule: "15.3% up to $7,500; 2.35% over $7,500",
+        fee_percent_estimate: price != null && price > 7500 ? 2.35 : 15.3
+      };
+    }
+
+    return {
+      fee_category: "Most categories",
+      fee_bucket: "13.6% / 2.35%",
+      fee_rule: "13.6% up to $7,500; 2.35% over $7,500",
+      fee_percent_estimate: price != null && price > 7500 ? 2.35 : 13.6
+    };
+  };
+
+  const fee = detectFeeCategory({ text: categoryBlob, price });
+
+  // ----------------------------
+  // Main PDP cutoff
+  // ----------------------------
+  const pdpAnchors = [
+    document.querySelector("#itemTitle"),
+    document.querySelector("[data-testid='x-item-title']"),
+    document.querySelector("[data-testid='x-buy-box']"),
+    document.querySelector("[data-testid='x-about-this-item']")
+  ].filter(Boolean);
+
+  let pdpBottom = innerHeight * 0.8;
+  if (pdpAnchors.length) {
+    pdpBottom = Math.max(...pdpAnchors.map(el => rectOf(el).bottom + scrollY));
+  }
+  pdpBottom += 150;
+
+  const isBelowPdp = (el) => rectOf(el).top + scrollY >= pdpBottom;
+
+  // ----------------------------
+  // Backend monetization
+  // ----------------------------
+  const adTechResources = new Set();
+  const syncResources = new Set();
+  const breakdown = { ebay: 0, criteo: 0, google: 0, other: 0 };
+
+  for (const r of performance.getEntriesByType("resource")) {
+    const url = lower(r.name || "");
+    if (!url) continue;
+
+    const isAdTech =
+      /ebayadservices|criteo|doubleclick|googlesyndication|adservice|taboola|outbrain|pubmatic|openx|rubicon/.test(url);
+
+    if (!isAdTech) continue;
+    adTechResources.add(r.name);
+
+    if (/sync|syncframe|match|identity|marketingtracking/.test(url)) {
+      syncResources.add(r.name);
+    }
+
+    if (/ebayadservices/.test(url)) breakdown.ebay++;
+    else if (/criteo/.test(url)) breakdown.criteo++;
+    else if (/doubleclick|googlesyndication|adservice/.test(url)) breakdown.google++;
+    else breakdown.other++;
+  }
+
+  // ----------------------------
+  // Visible monetization
+  // ----------------------------
+  let recommendationSections = 0;
+  let sponsoredLabels = 0;
+  let stickyUiBlocks = 0;
+  let adIframes = 0;
+  const itemLinks = new Set();
+
+  document.querySelectorAll("h2, h3, div, span").forEach((el) => {
+    if (!isVisible(el) || !isBelowPdp(el)) return;
+    const t = lower(textOf(el));
+
+    if (/\bsimilar\b|\brelated\b|\brecommended\b|\byou may also like\b|\bmore to explore\b/.test(t)) {
+      recommendationSections++;
+    }
+    if (t === "sponsored" || t === "promoted" || /\bsponsored\b|\bpromoted\b/.test(t)) {
+      sponsoredLabels++;
+    }
+  });
+
+  document.querySelectorAll('a[href*="/itm/"]').forEach((a) => {
+    if (!isVisible(a) || !isBelowPdp(a)) return;
+    itemLinks.add(a.href);
+  });
+
+  document.querySelectorAll("body *").forEach((el) => {
+    if (!isVisible(el) || !isBelowPdp(el)) return;
+    const s = getComputedStyle(el);
+    if ((s.position === "sticky" || s.position === "fixed") && rectOf(el).height > 40) {
+      stickyUiBlocks++;
+    }
+  });
+
+  document.querySelectorAll("iframe").forEach((el) => {
+    const src = lower(el.getAttribute("src") || "");
+    if (/ebayadservices|criteo|doubleclick|googlesyndication|adservice/.test(src)) {
+      adIframes++;
+    }
+  });
+
+  const backendMonetizationScore = adTechResources.size + syncResources.size * 1.5;
+  const visibleMonetizationScore =
+    recommendationSections * 2 +
+    sponsoredLabels * 3 +
+    adIframes * 3 +
+    stickyUiBlocks +
+    Math.min(itemLinks.size / 10, 10);
+
+  // ----------------------------
+  // Output row + CSV
+  // ----------------------------
+  const row = {
+    captured_at: new Date().toISOString(),
+    page_url: location.href,
+    item_id: itemId,
+    item_title: itemTitle,
+    item_price_text: priceText,
+    item_price_numeric: price ?? "",
+    breadcrumb_text: breadcrumbText,
+    fee_category_detected: fee.fee_category,
+    fee_bucket_detected: fee.fee_bucket,
+    fee_rule_detected: fee.fee_rule,
+    fee_percent_estimate: fee.fee_percent_estimate,
+    ad_tech_resources: adTechResources.size,
+    sync_identity_calls: syncResources.size,
+    ebay_ad_calls: breakdown.ebay,
+    criteo_calls: breakdown.criteo,
+    google_ad_calls: breakdown.google,
+    other_adtech_calls: breakdown.other,
+    recommendation_sections: recommendationSections,
+    sponsored_labels: sponsoredLabels,
+    item_links_below_pdp: itemLinks.size,
+    sticky_ui_blocks: stickyUiBlocks,
+    ad_iframes: adIframes,
+    backend_monetization_score: +backendMonetizationScore.toFixed(2),
+    visible_monetization_score: +visibleMonetizationScore.toFixed(2)
+  };
+
+  const headers = Object.keys(row);
+  const csv = [
+    headers.join(","),
+    headers.map((h) => csvEscape(row[h])).join(",")
+  ].join("\n");
+
+  const safeId = itemId || "unknown";
+  const safeTitle = itemTitle
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .slice(0, 50) || "item";
+
+  const filename = `ebay_audit_${safeId}_${safeTitle}_${new Date().toISOString().replace(/[:.]/g, "-")}.csv`;
+
+  console.table([row]);
+  console.log("Detected fee category:", fee);
+  downloadTextFile(filename, csv);
+
+  return row;
+})();
